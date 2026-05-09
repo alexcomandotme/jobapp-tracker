@@ -1,15 +1,15 @@
-# Job Tracker
+# job-tracker
 
-Tracker local pentru aplicații de job, cu sync automat în Google Sheets.
+Local job application tracker with Google Sheets sync.
 
-## Setup
+## usage
 
-1. Deschide `job-tracker.html` direct în browser
-2. Datele se salvează în `localStorage` — rămân între sesiuni
+Open `job-tracker.html` in a browser. Data persists in localStorage.
 
-## Google Sheets sync
+## sheets sync
 
-**Apps Script** — codul care primește datele:
+1. Create a Google Sheet and open Extensions → Apps Script
+2. Paste this:
 
 ```javascript
 function doPost(e) {
@@ -22,23 +22,11 @@ function doPost(e) {
 }
 ```
 
-**Deployment:**
-- Extensions → Apps Script → Deploy → New deployment
-- Type: Web app
-- Execute as: Me
-- Who has access: Anyone
-- Copiază URL-ul `/exec` și pune-l în `job-tracker.html` la `SHEETS_URL`
+3. Deploy → New deployment → Web app → Execute as: Me → Access: Anyone
+4. Copy the `/exec` URL into `job-tracker.html` at `SHEETS_URL`
 
-## Utilizare
+## notes
 
-| Câmp | Detalii |
-|---|---|
-| companie | numele companiei |
-| rol | titlul poziției |
-| link | URL job posting — `http://` se adaugă automat |
-| status | de aplicat / aplicat / interviu / respins / fără răspuns |
-| notiță | orice notă relevantă |
-
-- **export CSV** — backup local
-- **import CSV** — restaurare sau migrare (duplicate detection după companie + dată)
-- Dot verde jos = sync
+- Links render correctly without `https://` prefix
+- CSV export/import available for backup
+- Green dot = synced, red dot = error
