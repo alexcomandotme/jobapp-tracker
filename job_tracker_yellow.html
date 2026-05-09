@@ -8,6 +8,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #f0c800; min-height: 100vh; padding: 2rem 1rem; font-family: Arial, sans-serif; }
 .wrap { max-width: 800px; margin: 0 auto; background: #f2f2f2; border-radius: 12px; padding: 2rem 1.5rem 3rem; }
+
+.setup { display: flex; flex-direction: column; gap: 16px; }
+.setup h2 { font-size: 15px; font-weight: 500; color: #111; }
+.setup p { font-size: 13px; color: #888; line-height: 1.6; }
+.setup input { font-size: 14px; background: #ebebeb; color: #111; border: 0.5px solid #ccc; border-radius: 8px; padding: 0 12px; height: 36px; outline: none; font-family: inherit; width: 100%; }
+.setup input:focus { border-color: #999; }
+.setup-row { display: flex; gap: 8px; align-items: center; }
+.setup-err { font-size: 12px; color: #c0392b; }
+
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 2rem; margin-bottom: 3rem; }
 .stat-val { font-size: 32px; font-weight: 500; color: #111; line-height: 1; }
 .stat-lbl { font-size: 12px; color: #888; margin-top: 4px; letter-spacing: 0.04em; }
@@ -48,59 +57,18 @@ button:hover { background: #333; }
 .sync-dot.syncing { background: #f0c800; }
 .sync-dot.ok { background: #5a9e5a; }
 .sync-dot.err { background: #c0392b; }
+.reset-btn { font-size: 11px; background: none; color: #bbb; border: none; cursor: pointer; padding: 0; margin-left: auto; }
+.reset-btn:hover { color: #888; background: none; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="stats">
-    <div><div class="stat-val" id="total">0</div><div class="stat-lbl">aplicate</div></div>
-    <div><div class="stat-val">70</div><div class="stat-lbl">target</div></div>
-    <div><div class="stat-val" id="days-left">0</div><div class="stat-lbl">zile rămase</div></div>
-    <div><div class="stat-val" id="per-day">0</div><div class="stat-lbl">necesar/zi</div></div>
-  </div>
-
-  <div class="bar-wrap">
-    <div class="bar-track"><div class="bar-fill" id="bar" style="width:0%"></div></div>
-    <div class="bar-lbl" id="bar-lbl">0 / 70</div>
-  </div>
-
-  <div class="form">
-    <div class="form-row">
-      <input type="text" id="company" placeholder="companie" />
-      <input type="text" id="role" placeholder="rol" />
-    </div>
-    <div class="form-row">
-      <input type="text" id="link" placeholder="link (opțional)" />
-      <select id="status">
-        <option value="de aplicat">de aplicat</option>
-        <option value="aplicat">aplicat</option>
-        <option value="interviu">interviu</option>
-        <option value="respins">respins</option>
-        <option value="fără răspuns">fără răspuns</option>
-      </select>
-    </div>
-    <textarea id="note" placeholder="notiță (opțional)"></textarea>
-    <div class="form-row3">
-      <div></div>
-      <button onclick="addApp()">adaugă</button>
-    </div>
-  </div>
-
-  <div id="list"></div>
-
-  <div class="io-bar">
-    <button class="io-btn" onclick="exportCSV()">export CSV</button>
-    <button class="io-btn" onclick="document.getElementById('import-file').click()">import CSV</button>
-    <input type="file" id="import-file" accept=".csv" style="display:none;width:auto;height:auto;" onchange="importCSV(this)" />
-    <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="io-msg"></span></div>
-  </div>
-</div>
+<div class="wrap" id="root"></div>
 
 <script>
 const TARGET = 70;
 const END = new Date('2026-05-31');
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbw0jtAQPWowpoGMTCOv869tNvlNH9Zv7uDZeHb6tf1iCZzfI6r1qV0um9fr82t0UiRE/exec';
 
+let SHEETS_URL = localStorage.getItem('sheets_url') || '';
 let apps = [];
 try { apps = JSON.parse(localStorage.getItem('job_apps_v3') || '[]'); } catch(e) {}
 
@@ -130,11 +98,13 @@ function save() { try { localStorage.setItem('job_apps_v3', JSON.stringify(apps)
 function setSyncStatus(state, text) {
   const dot = document.getElementById('sync-dot');
   const msg = document.getElementById('io-msg');
+  if (!dot || !msg) return;
   dot.className = 'sync-dot' + (state ? ' ' + state : '');
   msg.textContent = text || '';
 }
 
 async function syncToSheets(app) {
+  if (!SHEETS_URL) return;
   setSyncStatus('syncing', 'sync...');
   try {
     await fetch(SHEETS_URL, {
@@ -157,6 +127,84 @@ function daysLeft() {
 }
 
 function countApplied() { return apps.filter(a => a.status !== 'de aplicat').length; }
+
+function renderSetup() {
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <div class="setup">
+      <h2>setup</h2>
+      <p>Bagă URL-ul de deployment din Google Apps Script.<br>Locally stored.</p>
+      <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/.../exec" />
+      <div class="setup-row">
+        <button onclick="saveUrl()">salvează</button>
+        <span class="setup-err" id="setup-err">URL invalid</span>
+      </div>
+    </div>
+  `;
+}
+
+function saveUrl() {
+  const val = document.getElementById('url-input').value.trim();
+  if (!val.includes('script.google.com')) {
+    document.getElementById('setup-err').style.display = 'block';
+    return;
+  }
+  SHEETS_URL = val;
+  localStorage.setItem('sheets_url', SHEETS_URL);
+  renderTracker();
+}
+
+function resetUrl() {
+  localStorage.removeItem('sheets_url');
+  SHEETS_URL = '';
+  renderSetup();
+}
+
+function renderTracker() {
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <div class="stats">
+      <div><div class="stat-val" id="total">0</div><div class="stat-lbl">aplicate</div></div>
+      <div><div class="stat-val">70</div><div class="stat-lbl">target</div></div>
+      <div><div class="stat-val" id="days-left">0</div><div class="stat-lbl">zile rămase</div></div>
+      <div><div class="stat-val" id="per-day">0</div><div class="stat-lbl">necesar/zi</div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-track"><div class="bar-fill" id="bar" style="width:0%"></div></div>
+      <div class="bar-lbl" id="bar-lbl">0 / 70</div>
+    </div>
+    <div class="form">
+      <div class="form-row">
+        <input type="text" id="company" placeholder="companie" />
+        <input type="text" id="role" placeholder="rol" />
+      </div>
+      <div class="form-row">
+        <input type="text" id="link" placeholder="link (opțional)" />
+        <select id="status">
+          <option value="de aplicat">de aplicat</option>
+          <option value="aplicat">aplicat</option>
+          <option value="interviu">interviu</option>
+          <option value="respins">respins</option>
+          <option value="fără răspuns">fără răspuns</option>
+        </select>
+      </div>
+      <textarea id="note" placeholder="notiță (opțional)"></textarea>
+      <div class="form-row3">
+        <div></div>
+        <button onclick="addApp()">adaugă</button>
+      </div>
+    </div>
+    <div id="list"></div>
+    <div class="io-bar">
+      <button class="io-btn" onclick="exportCSV()">export CSV</button>
+      <button class="io-btn" onclick="document.getElementById('import-file').click()">import CSV</button>
+      <input type="file" id="import-file" accept=".csv" style="display:none;width:auto;height:auto;" onchange="importCSV(this)" />
+      <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="io-msg"></span></div>
+      <button class="reset-btn" onclick="resetUrl()">reset sheets url</button>
+    </div>
+  `;
+  render();
+}
 
 function render() {
   const total = countApplied();
@@ -267,7 +315,12 @@ function importCSV(input) {
   reader.readAsText(file);
 }
 
-render();
+// init
+if (SHEETS_URL) {
+  renderTracker();
+} else {
+  renderSetup();
+}
 </script>
 </body>
 </html>
