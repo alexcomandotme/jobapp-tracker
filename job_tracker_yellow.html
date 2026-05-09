@@ -8,15 +8,14 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #f0c800; min-height: 100vh; padding: 2rem 1rem; font-family: Arial, sans-serif; }
 .wrap { max-width: 800px; margin: 0 auto; background: #f2f2f2; border-radius: 12px; padding: 2rem 1.5rem 3rem; }
-
 .setup { display: flex; flex-direction: column; gap: 16px; }
 .setup h2 { font-size: 15px; font-weight: 500; color: #111; }
 .setup p { font-size: 13px; color: #888; line-height: 1.6; }
 .setup input { font-size: 14px; background: #ebebeb; color: #111; border: 0.5px solid #ccc; border-radius: 8px; padding: 0 12px; height: 36px; outline: none; font-family: inherit; width: 100%; }
 .setup input:focus { border-color: #999; }
 .setup-row { display: flex; gap: 8px; align-items: center; }
+.setup-msg { font-size: 12px; color: #888; }
 .setup-err { font-size: 12px; color: #c0392b; }
-
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 2rem; margin-bottom: 3rem; }
 .stat-val { font-size: 32px; font-weight: 500; color: #111; line-height: 1; }
 .stat-lbl { font-size: 12px; color: #888; margin-top: 4px; letter-spacing: 0.04em; }
@@ -119,6 +118,31 @@ async function syncToSheets(app) {
   setTimeout(() => setSyncStatus('', ''), 3000);
 }
 
+async function importFromSheets(url) {
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!Array.isArray(data)) throw new Error('format invalid');
+  let count = 0;
+  data.forEach(item => {
+    if (!item.company) return;
+    const exists = apps.some(a => a.company === item.company && a.date === item.date);
+    if (!exists) {
+      apps.push({
+        company: item.company,
+        role: item.role || '',
+        status: item.status || 'de aplicat',
+        link: normalizeLink(item.link || ''),
+        note: item.note || '',
+        date: item.date || '',
+        timestamp: item.timestamp || ''
+      });
+      count++;
+    }
+  });
+  save();
+  return count;
+}
+
 function daysLeft() {
   const today = new Date(); today.setHours(0,0,0,0);
   let n = 0, d = new Date(today);
@@ -133,25 +157,37 @@ function renderSetup() {
   root.innerHTML = `
     <div class="setup">
       <h2>setup</h2>
-      <p>Insert AppsScript Deployment URL.<br>Locally stored.</p>
+      <p>Bagă URL-ul de deployment din Google Apps Script.<br>Se salvează local — nu apare în codul sursă.</p>
       <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/.../exec" />
       <div class="setup-row">
-        <button onclick="saveUrl()">salvează</button>
-        <span class="setup-err" id="setup-err">URL invalid</span>
+        <button onclick="saveUrl()">salvează și importă</button>
+        <span class="setup-msg" id="setup-msg"></span>
+        <span class="setup-err" id="setup-err" style="display:none">URL invalid</span>
       </div>
     </div>
   `;
 }
 
-function saveUrl() {
+async function saveUrl() {
   const val = document.getElementById('url-input').value.trim();
   if (!val.includes('script.google.com')) {
-    document.getElementById('setup-err').style.display = 'block';
+    document.getElementById('setup-err').style.display = 'inline';
     return;
   }
   SHEETS_URL = val;
   localStorage.setItem('sheets_url', SHEETS_URL);
-  renderTracker();
+
+  const msg = document.getElementById('setup-msg');
+  msg.textContent = 'se importă din Sheets...';
+
+  try {
+    const count = await importFromSheets(SHEETS_URL);
+    msg.textContent = count + ' aplicații importate';
+    setTimeout(() => renderTracker(), 1000);
+  } catch(e) {
+    msg.style.color = '#c0392b';
+    msg.textContent = 'eroare la import — verifică URL-ul';
+  }
 }
 
 function resetUrl() {
@@ -315,7 +351,6 @@ function importCSV(input) {
   reader.readAsText(file);
 }
 
-// init
 if (SHEETS_URL) {
   renderTracker();
 } else {
