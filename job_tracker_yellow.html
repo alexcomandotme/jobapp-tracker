@@ -1,8 +1,12 @@
-
-<h2 class="sr-only">The temptation to quit will be the greatest just before you're about to succeed</h2>
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Job Tracker</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-.page { background: #f0c800; min-height: 100vh; padding: 2rem 1rem; }
+body { background: #f0c800; min-height: 100vh; padding: 2rem 1rem; font-family: Arial, sans-serif; }
 .wrap { max-width: 800px; margin: 0 auto; background: #f2f2f2; border-radius: 12px; padding: 2rem 1.5rem 3rem; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 2rem; margin-bottom: 3rem; }
 .stat-val { font-size: 32px; font-weight: 500; color: #111; line-height: 1; }
@@ -13,14 +17,13 @@
 .bar-lbl { font-size: 12px; color: #888; }
 .form { margin-bottom: 2.5rem; display: grid; gap: 8px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .form-row3 { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-input, select, textarea { font-size: 14px; background: #ebebeb; color: #111; border: 0.5px solid #ccc; border-radius: 8px; padding: 0 12px; height: 36px; outline: none; font-family: inherit; }
+input, select, textarea { font-size: 14px; background: #ebebeb; color: #111; border: 0.5px solid #ccc; border-radius: 8px; padding: 0 12px; height: 36px; outline: none; font-family: inherit; width: 100%; }
 textarea { height: 60px; padding: 8px 12px; resize: none; }
 input::placeholder, textarea::placeholder { color: #aaa; }
 input:focus, select:focus, textarea:focus { border-color: #999; }
 select option { background: #ebebeb; color: #111; }
-button { font-size: 13px; background: #111; color: #fff; border: none; border-radius: 8px; padding: 0 16px; height: 36px; cursor: pointer; letter-spacing: 0.02em; }
+button { font-size: 13px; background: #111; color: #fff; border: none; border-radius: 8px; padding: 0 16px; height: 36px; cursor: pointer; letter-spacing: 0.02em; white-space: nowrap; }
 button:hover { background: #333; }
 .app-item { padding: 12px 0; border-bottom: 0.5px solid #ddd; }
 .app-main { display: flex; align-items: center; gap: 12px; }
@@ -29,24 +32,25 @@ button:hover { background: #333; }
 .app-company a:hover { text-decoration: underline; }
 .app-role { font-size: 12px; color: #888; }
 .app-note { font-size: 12px; color: #888; margin-top: 5px; font-style: italic; }
-.app-date { font-size: 12px; color: #888; margin-left: auto; white-space: nowrap; }
+.app-meta { display: flex; flex-direction: column; align-items: flex-end; margin-left: auto; gap: 2px; }
+.app-date { font-size: 12px; color: #888; white-space: nowrap; }
+.app-time { font-size: 11px; color: #bbb; white-space: nowrap; }
 .app-del { background: none; border: none; cursor: pointer; color: #bbb; font-size: 16px; padding: 0 0 0 8px; line-height: 1; height: auto; }
-.app-del:hover { color: #555; background: none; }
-.badge { font-size: 11px; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
-.status-select { font-size: 11px; background: transparent; border: none; cursor: pointer; padding: 2px 4px; outline: none; color: inherit; font-family: inherit; height: auto; border-radius: 3px; }
+.app-del:hover { color: #555; }
+.badge { font-size: 11px; border-radius: 3px; white-space: nowrap; padding: 0; }
+.status-select { font-size: 11px; background: transparent; border: none; cursor: pointer; padding: 2px 4px; outline: none; color: inherit; font-family: inherit; height: auto; border-radius: 3px; width: auto; }
 .empty { font-size: 13px; color: #aaa; padding: 1.5rem 0; }
-.io-bar { display: flex; gap: 8px; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 0.5px solid #ddd; align-items: center; }
+.io-bar { display: flex; gap: 8px; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 0.5px solid #ddd; align-items: center; flex-wrap: wrap; }
 .io-btn { font-size: 11px; background: none; color: #888; border: 0.5px solid #ccc; border-radius: 6px; padding: 0 12px; height: 28px; cursor: pointer; letter-spacing: 0.02em; }
-.io-btn:hover { color: #111; border-color: #999; background: none; }
+.io-btn:hover { color: #111; border-color: #999; }
 .sync-status { font-size: 11px; color: #aaa; display: flex; align-items: center; gap: 5px; }
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #ccc; display: inline-block; flex-shrink: 0; }
 .sync-dot.syncing { background: #f0c800; }
 .sync-dot.ok { background: #5a9e5a; }
 .sync-dot.err { background: #c0392b; }
-.io-lbl { font-size: 11px; color: #aaa; margin-left: auto; }
 </style>
-
-<div class="page">
+</head>
+<body>
 <div class="wrap">
   <div class="stats">
     <div><div class="stat-val" id="total">0</div><div class="stat-lbl">aplicate</div></div>
@@ -65,7 +69,7 @@ button:hover { background: #333; }
       <input type="text" id="company" placeholder="companie" />
       <input type="text" id="role" placeholder="rol" />
     </div>
-    <div class="form-row2">
+    <div class="form-row">
       <input type="text" id="link" placeholder="link (opțional)" />
       <select id="status">
         <option value="de aplicat">de aplicat</option>
@@ -87,17 +91,15 @@ button:hover { background: #333; }
   <div class="io-bar">
     <button class="io-btn" onclick="exportCSV()">export CSV</button>
     <button class="io-btn" onclick="document.getElementById('import-file').click()">import CSV</button>
-    <input type="file" id="import-file" accept=".csv" style="display:none" onchange="importCSV(this)" />
+    <input type="file" id="import-file" accept=".csv" style="display:none;width:auto;height:auto;" onchange="importCSV(this)" />
     <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="io-msg"></span></div>
-    <span class="io-lbl"></span>
   </div>
-</div>
 </div>
 
 <script>
 const TARGET = 70;
 const END = new Date('2026-05-31');
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwqDk4uoRiA7gnNy8NQEqHo1pKHWfqZP5D5JUYbBFjjCbJ9n9RxxIJaAfktAhKqaASW/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbw0jtAQPWowpoGMTCOv869tNvlNH9Zv7uDZeHb6tf1iCZzfI6r1qV0um9fr82t0UiRE/exec';
 
 let apps = [];
 try { apps = JSON.parse(localStorage.getItem('job_apps_v3') || '[]'); } catch(e) {}
@@ -119,6 +121,10 @@ function normalizeLink(raw) {
   return 'https://' + raw;
 }
 
+function now() {
+  return new Date().toLocaleString('ro-RO', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
 function save() { try { localStorage.setItem('job_apps_v3', JSON.stringify(apps)); } catch(e) {} }
 
 function setSyncStatus(state, text) {
@@ -133,16 +139,14 @@ async function syncToSheets(app) {
   try {
     await fetch(SHEETS_URL, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(app)
     });
     setSyncStatus('ok', 'sincronizat');
-    setTimeout(() => setSyncStatus('', ''), 3000);
   } catch(e) {
     setSyncStatus('err', 'eroare sync');
-    setTimeout(() => setSyncStatus('', ''), 4000);
   }
+  setTimeout(() => setSyncStatus('', ''), 3000);
 }
 
 function daysLeft() {
@@ -189,7 +193,10 @@ function render() {
         <span class="badge" style="background:${sc.bg};color:${sc.color};padding:0;">
           <select class="status-select" style="background:${sc.bg};color:${sc.color};" onchange="changeStatus(${ri},this.value)">${opts}</select>
         </span>
-        <div class="app-date">${app.date}</div>
+        <div class="app-meta">
+          <div class="app-date">${app.date}</div>
+          ${app.timestamp ? `<div class="app-time">${app.timestamp}</div>` : ''}
+        </div>
         <button class="app-del" onclick="del(${ri})" aria-label="șterge">×</button>
       </div>
       ${app.note ? `<div class="app-note">${app.note}</div>` : ''}
@@ -207,7 +214,8 @@ function addApp() {
     status: document.getElementById('status').value,
     link: normalizeLink(document.getElementById('link').value),
     note: document.getElementById('note').value.trim(),
-    date: new Date().toLocaleDateString('ro-RO', { day:'2-digit', month:'2-digit' })
+    date: new Date().toLocaleDateString('ro-RO', { day:'2-digit', month:'2-digit' }),
+    timestamp: now()
   };
   apps.push(app);
   save(); render();
@@ -217,6 +225,7 @@ function addApp() {
 
 function changeStatus(i, val) {
   apps[i].status = val;
+  apps[i].timestamp = now();
   save(); render();
   syncToSheets(apps[i]);
 }
@@ -224,8 +233,8 @@ function changeStatus(i, val) {
 function del(i) { apps.splice(i, 1); save(); render(); }
 
 function exportCSV() {
-  const rows = [['companie','rol','status','link','notita','data']];
-  apps.forEach(a => rows.push([a.company, a.role||'', a.status, a.link||'', (a.note||'').replace(/,/g,';'), a.date]));
+  const rows = [['companie','rol','status','link','notita','data','timestamp']];
+  apps.forEach(a => rows.push([a.company, a.role||'', a.status, a.link||'', (a.note||'').replace(/,/g,';'), a.date, a.timestamp||'']));
   const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
@@ -245,10 +254,10 @@ function importCSV(input) {
     lines.forEach(line => {
       const cols = line.match(/"([^"]*)"/g);
       if (!cols || cols.length < 6) return;
-      const [company, role, status, link, note, date] = cols.map(c => c.replace(/"/g,''));
+      const [company, role, status, link, note, date, timestamp] = cols.map(c => c.replace(/"/g,''));
       if (!company) return;
       const exists = apps.some(a => a.company === company && a.date === date);
-      if (!exists) { apps.push({ company, role, status, link, note, date }); count++; }
+      if (!exists) { apps.push({ company, role, status, link, note, date, timestamp: timestamp||'' }); count++; }
     });
     save(); render();
     setSyncStatus('ok', count + ' importate');
@@ -260,3 +269,5 @@ function importCSV(input) {
 
 render();
 </script>
+</body>
+</html>
