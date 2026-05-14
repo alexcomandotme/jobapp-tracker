@@ -48,6 +48,7 @@ button:hover { background: #333; }
 .badge { font-size: 11px; border-radius: 3px; white-space: nowrap; padding: 0; }
 .status-select { font-size: 11px; background: transparent; border: none; cursor: pointer; padding: 2px 4px; outline: none; color: inherit; font-family: inherit; height: auto; border-radius: 3px; width: auto; }
 .empty { font-size: 13px; color: #aaa; padding: 1.5rem 0; }
+.section-divider { font-size: 11px; color: #aaa; letter-spacing: 0.06em; text-transform: uppercase; padding: 16px 0 8px; border-top: 0.5px solid #e0e0e0; margin-top: 8px; }
 .io-bar { display: flex; gap: 8px; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 0.5px solid #ddd; align-items: center; flex-wrap: wrap; }
 .io-btn { font-size: 11px; background: none; color: #888; border: 0.5px solid #ccc; border-radius: 6px; padding: 0 12px; height: 28px; cursor: pointer; letter-spacing: 0.02em; }
 .io-btn:hover { color: #111; border-color: #999; }
@@ -80,6 +81,7 @@ const SC = {
   'fără răspuns': { bg: '#F1EFE8', color: '#5F5E5A' }
 };
 const STATUSES = ['de aplicat','aplicat','interviu','respins','fără răspuns'];
+const INACTIVE = ['aplicat','interviu','respins','fără răspuns'];
 
 function normalizeLink(raw) {
   if (!raw) return '';
@@ -177,10 +179,8 @@ async function saveUrl() {
   }
   SHEETS_URL = val;
   localStorage.setItem('sheets_url', SHEETS_URL);
-
   const msg = document.getElementById('setup-msg');
   msg.textContent = 'se importă din Sheets...';
-
   try {
     const count = await importFromSheets(SHEETS_URL);
     msg.textContent = count + ' aplicații importate';
@@ -243,6 +243,35 @@ function renderTracker() {
   render();
 }
 
+function renderAppItem(app, ri) {
+  const sc = SC[app.status] || SC['aplicat'];
+  const opts = STATUSES.map(s => `<option value="${s}" ${s===app.status?'selected':''}>${s}</option>`).join('');
+  const normalizedLink = normalizeLink(app.link);
+  const companyHtml = normalizedLink
+    ? `<a href="${normalizedLink}" target="_blank" rel="noopener">${app.company}</a>`
+    : app.company;
+  const row = document.createElement('div');
+  row.className = 'app-item';
+  row.innerHTML = `
+    <div class="app-main">
+      <div style="flex:1;min-width:0;">
+        <div class="app-company">${companyHtml}</div>
+        ${app.role ? `<div class="app-role">${app.role}</div>` : ''}
+      </div>
+      <span class="badge" style="background:${sc.bg};color:${sc.color};padding:0;">
+        <select class="status-select" style="background:${sc.bg};color:${sc.color};" onchange="changeStatus(${ri},this.value)">${opts}</select>
+      </span>
+      <div class="app-meta">
+        <div class="app-date">${app.date}</div>
+        ${app.timestamp ? `<div class="app-time">${app.timestamp}</div>` : ''}
+      </div>
+      <button class="app-del" onclick="del(${ri})" aria-label="șterge">×</button>
+    </div>
+    ${app.note ? `<div class="app-note">${app.note}</div>` : ''}
+  `;
+  return row;
+}
+
 function render() {
   const total = countApplied();
   const dl = daysLeft();
@@ -257,37 +286,29 @@ function render() {
 
   const list = document.getElementById('list');
   list.innerHTML = '';
-  if (!apps.length) { list.innerHTML = '<div class="empty">nicio aplicație încă</div>'; return; }
 
-  [...apps].reverse().forEach((app, i) => {
-    const ri = apps.length - 1 - i;
-    const sc = SC[app.status] || SC['aplicat'];
-    const opts = STATUSES.map(s => `<option value="${s}" ${s===app.status?'selected':''}>${s}</option>`).join('');
-    const normalizedLink = normalizeLink(app.link);
-    const companyHtml = normalizedLink
-      ? `<a href="${normalizedLink}" target="_blank" rel="noopener">${app.company}</a>`
-      : app.company;
-    const row = document.createElement('div');
-    row.className = 'app-item';
-    row.innerHTML = `
-      <div class="app-main">
-        <div style="flex:1;min-width:0;">
-          <div class="app-company">${companyHtml}</div>
-          ${app.role ? `<div class="app-role">${app.role}</div>` : ''}
-        </div>
-        <span class="badge" style="background:${sc.bg};color:${sc.color};padding:0;">
-          <select class="status-select" style="background:${sc.bg};color:${sc.color};" onchange="changeStatus(${ri},this.value)">${opts}</select>
-        </span>
-        <div class="app-meta">
-          <div class="app-date">${app.date}</div>
-          ${app.timestamp ? `<div class="app-time">${app.timestamp}</div>` : ''}
-        </div>
-        <button class="app-del" onclick="del(${ri})" aria-label="șterge">×</button>
-      </div>
-      ${app.note ? `<div class="app-note">${app.note}</div>` : ''}
-    `;
-    list.appendChild(row);
-  });
+  if (!apps.length) {
+    list.innerHTML = '<div class="empty">nicio aplicație încă</div>';
+    return;
+  }
+
+  // Separă în două grupe
+  const pending = apps.map((a, i) => ({ app: a, i })).filter(x => x.app.status === 'de aplicat').reverse();
+  const done = apps.map((a, i) => ({ app: a, i })).filter(x => INACTIVE.includes(x.app.status)).reverse();
+
+  // Afișează "de aplicat" sus
+  if (pending.length) {
+    pending.forEach(({ app, i }) => list.appendChild(renderAppItem(app, i)));
+  }
+
+  // Divider + "procesate" jos
+  if (done.length) {
+    const divider = document.createElement('div');
+    divider.className = 'section-divider';
+    divider.textContent = 'procesate';
+    list.appendChild(divider);
+    done.forEach(({ app, i }) => list.appendChild(renderAppItem(app, i)));
+  }
 }
 
 function addApp() {
